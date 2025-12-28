@@ -1,0 +1,9 @@
+INPUT_SHAPE = (4, 84, 84)
+ACTION_SIZE = len(possible_actions)
+SEED = 0
+GAMMA = 0.99           # discount factor
+ALPHA = 0.0007386      # Actor learning rate (optimized value)
+BETA = 0.0005          # Critic learning rate
+UPDATE_EVERY = 100     # how often to update the network
+
+agent = A2CAgent(INPUT_SHAPE, ACTION_SIZE, SEED, device, GAMMA, ALPHA, BETA, UPDATE_EVERY, ActorCnn, CriticCnn)

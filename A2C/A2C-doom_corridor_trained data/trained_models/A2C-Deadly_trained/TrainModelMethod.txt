@@ -1,0 +1,69 @@
+import os
+import torch
+import numpy as np
+import matplotlib.pyplot as plt
+from torch.utils.tensorboard import SummaryWriter
+from collections import deque
+from IPython.display import clear_output
+
+# Step 9: Train the Agent with Actor Critic
+def train(agent, game, stack_frames, possible_actions, start_epoch=0, n_episodes=1000, save_model_every=50):
+    game.set_window_visible(False)
+    game.init()
+    writer = SummaryWriter()  # Initialize TensorBoard writer
+    scores = []
+    scores_window = deque(maxlen=20)
+    
+    for i_episode in range(start_epoch + 1, n_episodes + 1):
+        game.new_episode()
+        state = stack_frames(None, game.get_state().screen_buffer.transpose(1, 2, 0), True)
+        score = 0
+        
+        while True:
+            action, log_prob, entropy = agent.act(state)
+            reward = game.make_action(possible_actions[action])
+            done = game.is_episode_finished()
+            score += reward
+            
+            if done:
+                break
+            else:
+                next_state = stack_frames(state, game.get_state().screen_buffer.transpose(1, 2, 0), False)
+                agent.step(state, log_prob, entropy, reward, done, next_state)
+                state = next_state
+
+        scores_window.append(score)       # save most recent score
+        scores.append(score)              # save most recent score
+
+        # Log data to TensorBoard
+        writer.add_scalar('Training Score', score, i_episode)
+        writer.add_scalar('Average Score', np.mean(scores_window), i_episode)
+
+        # Log hyperparameters
+        writer.add_scalar('Hyperparameters/GAMMA', agent.gamma, i_episode)
+        writer.add_scalar('Hyperparameters/ALPHA', agent.alpha, i_episode)
+        writer.add_scalar('Hyperparameters/BETA', agent.beta, i_episode)
+        writer.add_scalar('Hyperparameters/UPDATE_EVERY', agent.update_every, i_episode)
+
+        # Plot the graph
+        clear_output(True)
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        plt.plot(np.arange(len(scores)), scores)
+        plt.ylabel('Score')
+        plt.xlabel('Episode #')
+        plt.show()
+        print('\rEpisode {}\tAverage Score: {:.2f}'.format(i_episode, np.mean(scores_window)), end="")
+
+        # Save model checkpoint every save_model_every episodes
+        if i_episode % save_model_every == 0:
+            checkpoint = {
+                'agent_state_dict': agent.state_dict(),
+                'episode': i_episode,
+                'scores': scores
+            }
+            torch.save(checkpoint, f'trained_model_checkpoint_{i_episode}.pth')
+
+    game.close()
+    writer.close()  # Close TensorBoard writer
+    return scores

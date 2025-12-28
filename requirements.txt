@@ -1,0 +1,8 @@
+vizdoom
+torch
+torchvision
+numpy
+matplotlib
+stable-baselines3
+gym
+tensorboard

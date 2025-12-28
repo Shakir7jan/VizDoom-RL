@@ -1,0 +1,74 @@
+import numpy as np
+import cv2
+from gym import Env
+from gym.spaces import Box, Discrete
+from vizdoom import DoomGame
+
+class VizDoomGym(Env): 
+    def __init__(self, render=False, config='scenarios/deadly_corridor_s1.cfg'): 
+        super().__init__()
+        self.game = DoomGame()
+        self.game.load_config(config)
+        
+        if not render: 
+            self.game.set_window_visible(False)
+        else:
+            self.game.set_window_visible(True)
+        
+        self.game.init()
+        
+        self.observation_space = Box(low=0, high=255, shape=(100,160,1), dtype=np.uint8) 
+        self.action_space = Discrete(7)
+        
+        self.damage_taken = 0
+        self.hitcount = 0
+        self.ammo = 52
+        
+    def step(self, action):
+        actions = np.identity(7)
+        movement_reward = self.game.make_action(actions[action], 4) 
+        
+        reward = 0 
+        
+        if self.game.get_state(): 
+            state = self.game.get_state().screen_buffer
+            state = self.grayscale(state)
+            
+            game_variables = self.game.get_state().game_variables
+            
+            health, damage_taken, hitcount, ammo = game_variables
+            
+            damage_taken_delta = -damage_taken + self.damage_taken
+            self.damage_taken = damage_taken
+            hitcount_delta = hitcount - self.hitcount
+            self.hitcount = hitcount
+            ammo_delta = ammo - self.ammo
+            self.ammo = ammo
+            
+            reward = movement_reward + damage_taken_delta*10 + hitcount_delta*200  + ammo_delta*5 
+            info = ammo
+        else: 
+            state = np.zeros(self.observation_space.shape)
+            info = 0 
+        
+        info = {"info":info}
+        done = self.game.is_episode_finished()
+        
+        return state, reward, done, info 
+    
+    def render(self): 
+        pass
+    
+    def reset(self): 
+        self.game.new_episode()
+        state = self.game.get_state().screen_buffer
+        return self.grayscale(state)
+    
+    def grayscale(self, observation):
+        gray = cv2.cvtColor(np.moveaxis(observation, 0, -1), cv2.COLOR_BGR2GRAY)
+        resize = cv2.resize(gray, (160,100), interpolation=cv2.INTER_CUBIC)
+        state = np.reshape(resize, (100,160,1))
+        return state
+    
+    def close(self): 
+        self.game.close()
