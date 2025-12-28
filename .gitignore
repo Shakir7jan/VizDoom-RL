@@ -1,0 +1,51 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS/editor
+.DS_Store
+.idea/
+.vscode/
+
+# Logs and tensorboard
+logs/
+runs/
+*.log
+
+# Model artifacts (large/binary)
+*.pth
+*.pt
+*.h5
+*.ckpt
+*.onnx
+*.zip
+checkpoints/
+saved_models/
+models/
+
+# Caches
+.cache/
+.mypy_cache/
+.pytest_cache/
+
+# Python packaging
+build/
+dist/
+*.egg-info/
+
+# Misc
+*.bak
+*.tmp
+
+# Ignore local env files
+.env
+.env.*
